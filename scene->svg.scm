@@ -14,13 +14,22 @@
 (define output-file (option-ref options 'output #f))
 
 (define-syntax svg
-  (syntax-rules ()
-    ((svg body ...) (list '*TOP*
-	(list 'svg
-	      '(@ (xmlns "http://www.w3.org/2000/svg")
-		  (version "1.1"))
-	      body ...
-	      )))))
+  (syntax-rules (params width height)
+    ((svg params para body ...)
+     (list '*TOP*
+	   (list 'svg
+		 para
+		 body ...)))
+    ((svg width w height h body ...)
+     (svg params `(@ (xmlns "http://www.w3.org/2000/svg")
+		     (version "1.1")
+		     (width ,w)
+		     (height ,h))
+	  body ...))
+    ((svg body ...)
+     (svg params '(@ (xmlns "http://www.w3.org/2000/svg")
+		     (version "1.1"))
+	  body ...))))
 
 (define (point->string point)
   (format #f "~A,~A" (car point) (cadr point)))
@@ -42,10 +51,10 @@
 
 (with-output-to-file output-file
   (lambda ()
-    (sxml->xml (svg
+    (sxml->xml (svg width 1000 height 1000
 		(svg-polygon '((100 10) (250 190) (160 210))
 			     "fill:red;stroke:purple;stroke-width:1")
-		(svg-polygon '((50 10) (250 190) (160 210))
+		(svg-polygon '((200 10) (250 190) (160 210))
 			     "fill:lime;stroke:purple;stroke-width:1")))))
 
 (write (points->string '((0 0) (1 1) (2 2))))
