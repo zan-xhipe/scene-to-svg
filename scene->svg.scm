@@ -9,5 +9,8 @@
 
 (define options (getopt-long (command-line) option-spec))
 
-(write (option-ref options 'output #f))
-(newline)
+(define output-file (option-ref options 'output #f))
+
+(with-output-to-file output-file
+  (lambda ()
+    (write 'test)))
