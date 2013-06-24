@@ -4,6 +4,7 @@
 (use-modules (ice-9 getopt-long))
 (use-modules (sxml simple))
 (use-modules (ice-9 format))
+(load "matrix.scm")
 
 (define option-spec
   '((output (single-char #\o) (value #t))
@@ -11,7 +12,12 @@
 
 (define options (getopt-long (command-line) option-spec))
 
-(define output-file (option-ref options 'output #f))
+(define *output-file* (option-ref options 'output #f))
+(define *input-file* (car (option-ref options '() #f)))
+
+(define *input* (with-input-from-file *input-file*
+  (lambda ()
+     (read))))
 
 (define-syntax svg
   (syntax-rules (params width height)
@@ -31,15 +37,6 @@
 		     (version "1.1"))
 	  body ...))))
 
-(define (point->string point)
-  (format #f "~A,~A" (car point) (cadr point)))
-
-(define (points->string points)
-  (string-trim-right
-   (format #f "~{~A ~}"
-	   (map (lambda (x)
-		  (point->string x)) points))))
-
 (define (svg-polygon points style)
   (list 'polygon
 	(list '@
@@ -48,15 +45,35 @@
 	 (list 'style
 	       style))))
 
+(define (points->string points)
+  (string-trim-right
+   (format #f "~{~A ~}"
+	   (map (lambda (x)
+		  (point->string x)) points))))
 
-(with-output-to-file output-file
+(define (point->string point)
+  (format #f "~A,~A" (car point) (cadr point)))
+
+(define (polygons->svg _width _height points)
+  (svg width _width height _height
+       (map (lambda (x)
+	      (svg-polygon (car x) (cadr x))) points)))
+
+(with-output-to-file *output-file*
   (lambda ()
-    (sxml->xml (svg width 1000 height 1000
-		(svg-polygon '((100 10) (250 190) (160 210))
-			     "fill:red;stroke:purple;stroke-width:1")
-		(svg-polygon '((200 10) (250 190) (160 210))
-			     "fill:lime;stroke:purple;stroke-width:1")))))
+    (sxml->xml
+     (polygons->svg 1000 1000
+		    *input*))))
 
-(write (points->string '((0 0) (1 1) (2 2))))
+(define (orthographic-y point)
+  (list (x point) (z point)))
+
+;; (project (1 2 3)) => (1 3)
+
+(write *input-file*)
 (newline)
-
+(write *input*)
+(newline)
+(write (make-matrix 3 3))
+(newline)
+ 
