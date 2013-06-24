@@ -3,6 +3,7 @@
 
 (use-modules (ice-9 getopt-long))
 (use-modules (sxml simple))
+(use-modules (ice-9 format))
 
 (define option-spec
   '((output (single-char #\o) (value #t))
@@ -12,14 +13,41 @@
 
 (define output-file (option-ref options 'output #f))
 
-(define test-svg '(*TOP* (svg (@ (xmlns "http://www.w3.org/2000/svg")
-				 (version "1.1"))
-			      (rect (@ (width 300)
-				       (height 100)
-				       (style "fill:rgb(0,0,255);stroke-width:1;stroke:rgb(0,0,0)")))
-			
-)))
+(define-syntax svg
+  (syntax-rules ()
+    ((svg body ...) (list '*TOP*
+	(list 'svg
+	      '(@ (xmlns "http://www.w3.org/2000/svg")
+		  (version "1.1"))
+	      body ...
+	      )))))
+
+(define (point->string point)
+  (format #f "~A,~A" (car point) (cadr point)))
+
+(define (points->string points)
+  (string-trim-right
+   (format #f "~{~A ~}"
+	   (map (lambda (x)
+		  (point->string x)) points))))
+
+(define (svg-polygon points style)
+  (list 'polygon
+	(list '@
+	 (list 'points
+	       (points->string points))
+	 (list 'style
+	       style))))
+
 
 (with-output-to-file output-file
   (lambda ()
-    (sxml->xml test-svg)))
+    (sxml->xml (svg
+		(svg-polygon '((100 10) (250 190) (160 210))
+			     "fill:red;stroke:purple;stroke-width:1")
+		(svg-polygon '((50 10) (250 190) (160 210))
+			     "fill:lime;stroke:purple;stroke-width:1")))))
+
+(write (points->string '((0 0) (1 1) (2 2))))
+(newline)
+
