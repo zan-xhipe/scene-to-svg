@@ -59,21 +59,64 @@
        (map (lambda (x)
 	      (svg-polygon (car x) (cadr x))) points)))
 
-(with-output-to-file *output-file*
-  (lambda ()
-    (sxml->xml
-     (polygons->svg 1000 1000
-		    *input*))))
+(define x car)
+(define y cadr)
+(define z caddr)
+
+;; (with-output-to-file *output-file*
+;;   (lambda ()
+;;     (sxml->xml
+;;      (polygons->svg 1000 1000
+;; 		    *input*))))
+
+(define (cross a b)
+  (list (- (* (y a) (z b))
+	   (* (z a) (y b)))
+	(- (* (x a) (z b))
+	   (* (z a) (x b)))
+	(- (* (x a) (y b))
+	   (* (y a) (x b)))))
+
+(define (dot a b)
+  (apply + (map * a b)))
+
+(define (add a b)
+  (map + a b))
+
+(define (subtract a b)
+  (map - a b))
+
+(define (square number)
+  (* number number))
+
+(define (norm point)
+  (sqrt (+ (square (x point))
+	   (square (y point))
+	   (square (z point)))))
+
+(define (normalize point)
+  (let ((n (norm point)))
+    (map (lambda (x)
+	   (/ x n))
+	 point)))
 
 (define (orthographic-y point)
   (list (x point) (z point)))
 
+(define (camera points)
+  (map (lambda (x)
+	 (list (car x) (cadr x)))
+       points))
+
+
 ;; (project (1 2 3)) => (1 3)
 
-(write *input-file*)
-(newline)
-(write *input*)
-(newline)
-(write (make-matrix 3 3))
-(newline)
+(define (print text)
+  (write text)
+  (newline))
+
+(print *input-file*)
+(print *input*)
+(print (normalize '(1 2 3)))
+(print (camera *input*))
  
